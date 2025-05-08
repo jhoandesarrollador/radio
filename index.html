@@ -293,27 +293,15 @@
 
     /* Responsive Media Queries */
     @media (max-width: 600px) {
-      .player-wrapper, .player-container {
+      .player-wrapper {
+        padding: 18px 6px 16px 6px;
         max-width: 98vw;
-        min-width: 180px;
-        padding: 10px 2vw 10px 2vw;
-      }
-      #wave-eq {
-        height: 70px !important;
-      }
-      .control-btn {
-        width: 48px;
-        height: 48px;
-        font-size: 1.5rem;
       }
       .player-bar {
-        gap: 10px;
+        gap: 16px;
       }
-      .info h3 {
-        font-size: 1.2rem;
-      }
-      .info span {
-        font-size: 0.9rem;
+      .controls {
+        gap: 18px;
       }
       .live-badge {
         right: 12px;
@@ -352,19 +340,6 @@
     /* Si el reproductor está incrustado en WordPress, aplicamos estos estilos */
     .embedded .player-container {
       margin-bottom: 10px; /* Reducir margen en WP */
-    }
-
-    .player-wrapper, .player-container {
-      width: 100%;
-      max-width: 440px;
-      min-width: 220px;
-      margin: 0 auto;
-    }
-    #wave-eq {
-      width: 100% !important;
-      max-width: 100%;
-      height: auto;
-      min-height: 70px;
     }
   </style>
 </head>
@@ -1092,16 +1067,3 @@ updatePlaybackUI = function() {
   handleVisibility();
 };
 </script>
-
-
-<!--
-Ejemplo de inserción en WordPress:
-<iframe 
-  src="https://tusitio.com/radio/index.html" 
-  width="100%" 
-  height="420" 
-  style="max-width:440px; min-width:220px; border:none; background:transparent;" 
-  allow="autoplay"
-  scrolling="no">
-</iframe>
--->
