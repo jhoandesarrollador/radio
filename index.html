@@ -962,13 +962,29 @@ meshContainer.addEventListener('mouseleave', () => { meshHover = false; });
 meshContainer.addEventListener('touchstart', () => { meshHover = true; });
 meshContainer.addEventListener('touchend', () => { meshHover = false; });
 
-// Modifica la función de dibujo para el efecto
+// --- Efecto especial localizado en el punto del mouse o dedo ---
+let meshPointerX = null;
+
+// Mouse
+meshContainer.addEventListener('mousemove', (e) => {
+  const rect = meshSVG.getBoundingClientRect();
+  meshPointerX = ((e.clientX - rect.left) / rect.width) * meshSVG.width.baseVal.value;
+});
+meshContainer.addEventListener('mouseleave', () => { meshPointerX = null; });
+// Touch
+meshContainer.addEventListener('touchmove', (e) => {
+  if (e.touches.length > 0) {
+    const rect = meshSVG.getBoundingClientRect();
+    meshPointerX = ((e.touches[0].clientX - rect.left) / rect.width) * meshSVG.width.baseVal.value;
+  }
+});
+meshContainer.addEventListener('touchend', () => { meshPointerX = null; });
+
+// Modifica la función de dibujo para el efecto localizado
 function drawMesh3DReactive() {
   meshPhase += 0.045;
   const {amp: audioAmp, energy, voice} = getAudioFeatures();
-  // Cambiar gradiente dinámicamente según voz/instrumental y hover
   let grad = meshSVG.querySelector(meshHover ? '#meshGradRainbow' : '#meshGrad');
-  // Animar el gradiente arcoíris si está en hover
   if (meshHover && grad) {
     rainbowPhase += 0.02;
     let stops = grad.children;
@@ -977,24 +993,38 @@ function drawMesh3DReactive() {
       stops[i].setAttribute('stop-color', `hsl(${hue}, 100%, 60%)`);
     }
   }
-  // Cambiar el filtro de glow
   let filterId = meshHover ? 'url(#glowStrong)' : 'url(#glow)';
   let i = 0;
   for (let poly of meshSVG.querySelectorAll('polyline')) {
     const points = [];
-    // Amplitud base + reacción al audio + extra si hover
     let ampBoost = meshHover ? 1.5 : 1;
     const amp = (32 + 32 * Math.sin(meshPhase/2 + i*0.09)) * (0.7 + 0.7*audioAmp) * (0.7 + 0.7*energy) * ampBoost;
     const freq = 1.1 + 0.7 * Math.sin(meshPhase/3 + i*0.13) + 0.2*energy;
     const yOffset = 70 + 28 * Math.sin(meshPhase/2.5 + i*0.11);
     for (let x = 0; x <= meshSVG.width.baseVal.value; x += 6) {
-      let y = yOffset + Math.sin((x/meshSVG.width.baseVal.value)*Math.PI*freq + meshPhase + i*0.13) * amp;
-      y += Math.sin((x/meshSVG.width.baseVal.value)*Math.PI*freq*2 + meshPhase*1.7 + i*0.19) * (amp/3.2);
+      // Efecto localizado: si el mouse/dedo está cerca de x, amplifica la onda y cambia el color
+      let localPulse = 1;
+      if (meshPointerX !== null) {
+        const dist = Math.abs(x - meshPointerX);
+        if (dist < 16) {
+          localPulse += 1.5 * Math.exp(-dist/4); // Pulso gaussiano más focalizado
+        }
+      }
+      let y = yOffset + Math.sin((x/meshSVG.width.baseVal.value)*Math.PI*freq + meshPhase + i*0.13) * amp * localPulse;
+      y += Math.sin((x/meshSVG.width.baseVal.value)*Math.PI*freq*2 + meshPhase*1.7 + i*0.19) * (amp/3.2) * localPulse;
       points.push(`${x},${y.toFixed(1)}`);
     }
     poly.setAttribute('points', points.join(' '));
     poly.setAttribute('stroke', meshHover ? 'url(#meshGradRainbow)' : 'url(#meshGrad)');
     poly.setAttribute('filter', filterId);
+    // Efecto de brillo extra en la línea más cercana al puntero
+    if (meshPointerX !== null && i === Math.floor(meshLines/2)) {
+      poly.setAttribute('stroke-width', meshHover ? '2.5' : '1.5');
+      poly.setAttribute('opacity', meshHover ? '1' : '0.85');
+    } else {
+      poly.setAttribute('stroke-width', '1.1');
+      poly.setAttribute('opacity', (0.18 + 0.82 * (i / meshLines)).toFixed(2));
+    }
     i++;
   }
 }
